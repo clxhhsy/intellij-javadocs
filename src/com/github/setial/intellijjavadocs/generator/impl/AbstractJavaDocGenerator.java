@@ -1,5 +1,6 @@
 package com.github.setial.intellijjavadocs.generator.impl;
 
+
 import com.github.setial.intellijjavadocs.configuration.JavaDocConfiguration;
 import com.github.setial.intellijjavadocs.generator.JavaDocGenerator;
 import com.github.setial.intellijjavadocs.model.JavaDoc;
@@ -9,7 +10,7 @@ import com.github.setial.intellijjavadocs.model.settings.Visibility;
 import com.github.setial.intellijjavadocs.template.DocTemplateManager;
 import com.github.setial.intellijjavadocs.template.DocTemplateProcessor;
 import com.github.setial.intellijjavadocs.utils.JavaDocUtils;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.PathMacros;
 import com.intellij.openapi.project.Project;
 import com.intellij.pom.PomNamedTarget;
 import com.intellij.psi.PsiElement;
@@ -18,11 +19,14 @@ import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.javadoc.PsiDocComment;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
 
 /**
  * The type Abstract java doc generator.
@@ -30,11 +34,16 @@ import java.util.Map;
  * @param <T> the type parameter
  * @author Sergey Timofiychuk
  */
-public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements JavaDocGenerator<T> {
+public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements JavaDocGenerator<T>
+{
+    private static final String DATE_FORMAT = "dateFormat";
 
     private DocTemplateManager docTemplateManager;
+
     private DocTemplateProcessor docTemplateProcessor;
+
     private PsiElementFactory psiElementFactory;
+
     private JavaDocConfiguration settings;
 
     /**
@@ -42,29 +51,35 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
      *
      * @param project the Project
      */
-    public AbstractJavaDocGenerator(@NotNull Project project) {
-        docTemplateManager = ServiceManager.getService(project, DocTemplateManager.class);
-        docTemplateProcessor = ServiceManager.getService(project, DocTemplateProcessor.class);
+    public AbstractJavaDocGenerator(@NotNull Project project)
+    {
+        docTemplateManager =project.getComponent(DocTemplateManager.class);
+        docTemplateProcessor = project.getComponent(DocTemplateProcessor.class);
         psiElementFactory = PsiElementFactory.SERVICE.getInstance(project);
-        settings = ServiceManager.getService(project, JavaDocConfiguration.class);
+        settings = project.getComponent(JavaDocConfiguration.class);
     }
 
     @Nullable
     @Override
-    public final PsiDocComment generate(@NotNull T element) {
+    public final PsiDocComment generate(@NotNull T element)
+    {
         PsiDocComment result = null;
         PsiDocComment oldDocComment = null;
         PsiElement firstElement = element.getFirstChild();
-        if (firstElement instanceof PsiDocComment) {
-            oldDocComment = (PsiDocComment) firstElement;
+        if (firstElement instanceof PsiDocComment)
+        {
+            oldDocComment = (PsiDocComment)firstElement;
         }
 
         JavaDocSettings configuration = settings.getConfiguration();
-        if (configuration != null) {
+        if (configuration != null)
+        {
             Mode mode = configuration.getGeneralSettings().getMode();
-            switch (mode) {
+            switch (mode)
+            {
                 case KEEP:
-                    if (oldDocComment != null) {
+                    if (oldDocComment != null)
+                    {
                         break;
                     }
                 case REPLACE:
@@ -72,9 +87,12 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
                     break;
                 case UPDATE:
                 default:
-                    if (oldDocComment != null) {
+                    if (oldDocComment != null)
+                    {
                         result = updateJavaDocAction(element, oldDocComment);
-                    } else {
+                    }
+                    else
+                    {
                         result = replaceJavaDocAction(element);
                     }
                     break;
@@ -89,7 +107,8 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
      * @return the Doc template manager
      */
     @NotNull
-    protected DocTemplateManager getDocTemplateManager() {
+    protected DocTemplateManager getDocTemplateManager()
+    {
         return docTemplateManager;
     }
 
@@ -99,7 +118,8 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
      * @return the Doc template processor
      */
     @NotNull
-    protected DocTemplateProcessor getDocTemplateProcessor() {
+    protected DocTemplateProcessor getDocTemplateProcessor()
+    {
         return docTemplateProcessor;
     }
 
@@ -109,7 +129,8 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
      * @return the Psi element factory
      */
     @NotNull
-    protected PsiElementFactory getPsiElementFactory() {
+    protected PsiElementFactory getPsiElementFactory()
+    {
         return psiElementFactory;
     }
 
@@ -119,7 +140,8 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
      * @return the settings
      */
     @NotNull
-    protected JavaDocConfiguration getSettings() {
+    protected JavaDocConfiguration getSettings()
+    {
         return settings;
     }
 
@@ -129,11 +151,12 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
      * @param modifiers the modifiers
      * @return the boolean
      */
-    protected boolean shouldGenerate(PsiModifierList modifiers) {
-        return checkModifiers(modifiers, PsiModifier.PUBLIC, Visibility.PUBLIC) ||
-                checkModifiers(modifiers, PsiModifier.PROTECTED, Visibility.PROTECTED) ||
-                checkModifiers(modifiers, PsiModifier.PACKAGE_LOCAL, Visibility.DEFAULT) ||
-                checkModifiers(modifiers, PsiModifier.PRIVATE, Visibility.PRIVATE);
+    protected boolean shouldGenerate(PsiModifierList modifiers)
+    {
+        return checkModifiers(modifiers, PsiModifier.PUBLIC, Visibility.PUBLIC)
+               || checkModifiers(modifiers, PsiModifier.PROTECTED, Visibility.PROTECTED)
+               || checkModifiers(modifiers, PsiModifier.PACKAGE_LOCAL, Visibility.DEFAULT)
+               || checkModifiers(modifiers, PsiModifier.PRIVATE, Visibility.PRIVATE);
     }
 
     /**
@@ -142,20 +165,36 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
      * @param element the element
      * @return the default parameters
      */
-    protected Map<String, Object> getDefaultParameters(PomNamedTarget element) {
+    protected Map<String, Object> getDefaultParameters(PomNamedTarget element)
+    {
         Map<String, Object> params = new HashMap<String, Object>();
+        params.put(DATE_FORMAT, "yyyy-MM-dd");
         params.put("element", element);
         params.put("name", getDocTemplateProcessor().buildDescription(element.getName(), true));
-        params.put("partName", getDocTemplateProcessor().buildPartialDescription(element.getName()));
+        params.put("partName",
+            getDocTemplateProcessor().buildPartialDescription(element.getName()));
         params.put("splitNames", StringUtils.splitByCharacterTypeCamelCase(element.getName()));
+        PathMacros macros = PathMacros.getInstance();
+        for (String name : macros.getUserMacroNames())
+        {
+            params.put("path" + name, macros.getValue(name));
+        }
+        for (Map.Entry<String, String> variable : getDocTemplateManager().getVariables().entrySet())
+        {
+            params.put(variable.getKey(), variable.getValue());
+        }
+        params.put("todayDate",
+            DateFormatUtils.format(new Date(), params.get(DATE_FORMAT).toString()));
         return params;
     }
 
-    private PsiDocComment updateJavaDocAction(T element, PsiDocComment oldDocComment) {
+    private PsiDocComment updateJavaDocAction(T element, PsiDocComment oldDocComment)
+    {
         PsiDocComment result = null;
         JavaDoc newJavaDoc = generateJavaDoc(element);
         JavaDoc oldJavaDoc = JavaDocUtils.createJavaDoc(oldDocComment);
-        if (newJavaDoc != null) {
+        if (newJavaDoc != null)
+        {
             newJavaDoc = JavaDocUtils.mergeJavaDocs(oldJavaDoc, newJavaDoc);
             String javaDoc = newJavaDoc.toJavaDoc();
             result = psiElementFactory.createDocCommentFromText(javaDoc);
@@ -163,20 +202,25 @@ public abstract class AbstractJavaDocGenerator<T extends PsiElement> implements 
         return result;
     }
 
-    private PsiDocComment replaceJavaDocAction(T element) {
+    private PsiDocComment replaceJavaDocAction(T element)
+    {
         PsiDocComment result = null;
         JavaDoc newJavaDoc = generateJavaDoc(element);
-        if (newJavaDoc != null) {
+        if (newJavaDoc != null)
+        {
             String javaDoc = newJavaDoc.toJavaDoc();
             result = psiElementFactory.createDocCommentFromText(javaDoc);
         }
         return result;
     }
 
-    private boolean checkModifiers(PsiModifierList modifiers, String modifier, Visibility visibility) {
+    private boolean checkModifiers(PsiModifierList modifiers, String modifier,
+                                   Visibility visibility)
+    {
         JavaDocSettings configuration = getSettings().getConfiguration();
-        return modifiers != null && modifiers.hasModifierProperty(modifier) && configuration != null &&
-                configuration.getGeneralSettings().getVisibilities().contains(visibility);
+        return modifiers != null && modifiers.hasModifierProperty(modifier)
+               && configuration != null
+               && configuration.getGeneralSettings().getVisibilities().contains(visibility);
     }
 
     /**

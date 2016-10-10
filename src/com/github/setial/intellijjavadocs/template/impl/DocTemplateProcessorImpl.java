@@ -1,13 +1,11 @@
 package com.github.setial.intellijjavadocs.template.impl;
 
 import com.github.setial.intellijjavadocs.exception.SetupTemplateException;
-import com.github.setial.intellijjavadocs.exception.TemplateNotFoundException;
 import com.github.setial.intellijjavadocs.template.DocTemplateProcessor;
 import com.github.setial.intellijjavadocs.utils.XmlUtils;
 import freemarker.template.Template;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.StringWriter;
 import java.util.ArrayList;

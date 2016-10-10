@@ -14,6 +14,7 @@ public class TemplateSettings {
     private Map<String, String> fieldTemplates = new LinkedHashMap<String, String>();
     private Map<String, String> methodTemplates = new LinkedHashMap<String, String>();
     private Map<String, String> constructorTemplates = new LinkedHashMap<String, String>();
+    private Map<String,String> variables = new LinkedHashMap<String, String>();
 
     /**
      * Gets class templates.
@@ -87,4 +88,11 @@ public class TemplateSettings {
         this.methodTemplates = methodTemplates;
     }
 
+    public Map<String, String> getVariables() {
+        return variables;
+    }
+
+    public void setVariables(Map<String, String> variables) {
+        this.variables = variables;
+    }
 }

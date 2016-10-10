@@ -1,5 +1,6 @@
 package com.github.setial.intellijjavadocs.action;
 
+
 import com.github.setial.intellijjavadocs.exception.TemplateNotFoundException;
 import com.github.setial.intellijjavadocs.generator.JavaDocGenerator;
 import com.github.setial.intellijjavadocs.generator.impl.ClassJavaDocGenerator;
@@ -9,17 +10,13 @@ import com.github.setial.intellijjavadocs.operation.JavaDocWriter;
 import com.intellij.codeInsight.CodeInsightActionHandler;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKeys;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiMethod;
+import com.intellij.psi.*;
 import com.intellij.psi.javadoc.PsiDocComment;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtilCore;
@@ -30,12 +27,14 @@ import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.List;
 
+
 /**
  * The type Java doc generate action.
  *
  * @author Sergey Timofiychuk
  */
-public class JavaDocGenerateAction extends BaseAction {
+public class JavaDocGenerateAction extends BaseAction
+{
 
     private static final Logger LOGGER = Logger.getInstance(JavaDocGenerateAction.class);
 
@@ -44,7 +43,8 @@ public class JavaDocGenerateAction extends BaseAction {
     /**
      * Instantiates a new Java doc generate action.
      */
-    public JavaDocGenerateAction() {
+    public JavaDocGenerateAction()
+    {
         this(new JavaDocHandler());
     }
 
@@ -53,9 +53,10 @@ public class JavaDocGenerateAction extends BaseAction {
      *
      * @param handler the handler
      */
-    public JavaDocGenerateAction(CodeInsightActionHandler handler) {
+    public JavaDocGenerateAction(CodeInsightActionHandler handler)
+    {
         super(handler);
-        writer = ServiceManager.getService(JavaDocWriter.class);
+        writer = ApplicationManager.getApplication().getComponent(JavaDocWriter.class);
     }
 
     /**
@@ -64,15 +65,19 @@ public class JavaDocGenerateAction extends BaseAction {
      * @param e the Event
      */
     @Override
-    public void actionPerformed(AnActionEvent e) {
+    public void actionPerformed(AnActionEvent e)
+    {
         DumbService dumbService = DumbService.getInstance(e.getProject());
-        if (dumbService.isDumb()) {
-            dumbService.showDumbModeNotification("Javadocs plugin is not available during indexing");
+        if (dumbService.isDumb())
+        {
+            dumbService.showDumbModeNotification(
+                "Javadocs plugin is not available during indexing");
             return;
         }
 
         Editor editor = DataKeys.EDITOR.getData(e.getDataContext());
-        if (editor == null) {
+        if (editor == null)
+        {
             LOGGER.error("Cannot get com.intellij.openapi.editor.Editor");
             Messages.showErrorDialog("Javadocs plugin is not available", "Javadocs plugin");
             return;
@@ -80,26 +85,34 @@ public class JavaDocGenerateAction extends BaseAction {
         int startPosition = editor.getSelectionModel().getSelectionStart();
         int endPosition = editor.getSelectionModel().getSelectionEnd();
         PsiFile file = DataKeys.PSI_FILE.getData(e.getDataContext());
-        if (file == null) {
+        if (file == null)
+        {
             LOGGER.error("Cannot get com.intellij.psi.PsiFile");
             Messages.showErrorDialog("Javadocs plugin is not available", "Javadocs plugin");
             return;
         }
         List<PsiElement> elements = new LinkedList<PsiElement>();
-        PsiElement firstElement = getJavaElement(PsiUtilCore.getElementAtOffset(file, startPosition));
-        if (firstElement != null) {
+        PsiElement firstElement = getJavaElement(
+            PsiUtilCore.getElementAtOffset(file, startPosition));
+        if (firstElement != null)
+        {
             PsiElement element = firstElement;
-            do {
-                if (isAllowedElementType(element)) {
+            do
+            {
+                if (isAllowedElementType(element))
+                {
                     elements.add(element);
                 }
                 element = element.getNextSibling();
-                if (element == null) {
+                if (element == null)
+                {
                     break;
                 }
-            } while (isElementInSelection(element, startPosition, endPosition));
+            }
+            while (isElementInSelection(element, startPosition, endPosition));
         }
-        for (PsiElement element : elements) {
+        for (PsiElement element : elements)
+        {
             processElement(element);
         }
     }
@@ -109,19 +122,26 @@ public class JavaDocGenerateAction extends BaseAction {
      *
      * @param element the Element
      */
-    protected void processElement(@NotNull PsiElement element) {
+    protected void processElement(@NotNull PsiElement element)
+    {
         JavaDocGenerator generator = getGenerator(element);
-        if (generator != null) {
-            try {
+        if (generator != null)
+        {
+            try
+            {
                 @SuppressWarnings("unchecked")
                 PsiDocComment javaDoc = generator.generate(element);
-                if (javaDoc != null) {
+                if (javaDoc != null)
+                {
                     writer.write(javaDoc, element);
                 }
-            } catch (TemplateNotFoundException e) {
+            }
+            catch (TemplateNotFoundException e)
+            {
                 LOGGER.warn(e);
                 String message = "Javadocs plugin is not available. Can not find suitable template for the element:\n{0}";
-                Messages.showWarningDialog(MessageFormat.format(message, e.getMessage()), "Javadocs plugin");
+                Messages.showWarningDialog(MessageFormat.format(message, e.getMessage()),
+                    "Javadocs plugin");
             }
         }
     }
@@ -133,14 +153,20 @@ public class JavaDocGenerateAction extends BaseAction {
      * @return the Generator
      */
     @Nullable
-    protected JavaDocGenerator getGenerator(@NotNull PsiElement element) {
+    protected JavaDocGenerator getGenerator(@NotNull PsiElement element)
+    {
         Project project = element.getProject();
         JavaDocGenerator generator = null;
-        if (PsiClass.class.isAssignableFrom(element.getClass())) {
+        if (PsiClass.class.isAssignableFrom(element.getClass()))
+        {
             generator = new ClassJavaDocGenerator(project);
-        } else if (PsiMethod.class.isAssignableFrom(element.getClass())) {
+        }
+        else if (PsiMethod.class.isAssignableFrom(element.getClass()))
+        {
             generator = new MethodJavaDocGenerator(project);
-        } else if (PsiField.class.isAssignableFrom(element.getClass())) {
+        }
+        else if (PsiField.class.isAssignableFrom(element.getClass()))
+        {
             generator = new FieldJavaDocGenerator(project);
         }
         return generator;
@@ -153,36 +179,45 @@ public class JavaDocGenerateAction extends BaseAction {
      * @return the Java element
      */
     @NotNull
-    private PsiElement getJavaElement(@NotNull PsiElement element) {
+    private PsiElement getJavaElement(@NotNull PsiElement element)
+    {
         PsiElement result = element;
         PsiField field = PsiTreeUtil.getParentOfType(element, PsiField.class);
         PsiMethod method = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
         PsiClass clazz = PsiTreeUtil.getParentOfType(element, PsiClass.class);
-        if (field != null) {
+        if (field != null)
+        {
             result = field;
-        } else if (method != null) {
+        }
+        else if (method != null)
+        {
             result = method;
-        } else if (clazz != null) {
+        }
+        else if (clazz != null)
+        {
             result = clazz;
         }
         return result;
     }
 
-    private boolean isElementInSelection(@NotNull PsiElement element, int startPosition, int endPosition) {
+    private boolean isElementInSelection(@NotNull PsiElement element, int startPosition,
+                                         int endPosition)
+    {
         boolean result = false;
         int elementTextOffset = element.getTextRange().getStartOffset();
-        if (elementTextOffset >= startPosition &&
-                elementTextOffset <= endPosition) {
+        if (elementTextOffset >= startPosition && elementTextOffset <= endPosition)
+        {
             result = true;
         }
         return result;
     }
 
-    private boolean isAllowedElementType(@NotNull PsiElement element) {
+    private boolean isAllowedElementType(@NotNull PsiElement element)
+    {
         boolean result = false;
-        if (element instanceof PsiClass ||
-                element instanceof PsiField ||
-                element instanceof PsiMethod) {
+        if (element instanceof PsiClass || element instanceof PsiField
+            || element instanceof PsiMethod)
+        {
             result = true;
         }
         return result;

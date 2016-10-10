@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 public class TemplatesTable extends JBTable {
 
     private List<Entry<String, String>> settings;
+    private List<String> columnNames;
 
     /**
      * Instantiates a new Templates table.
@@ -37,12 +38,13 @@ public class TemplatesTable extends JBTable {
      * @param model the model
      */
     @SuppressWarnings("unchecked")
-    public TemplatesTable(Map<String, String> model) {
+    public TemplatesTable(Map<String, String> model ,List<String> columnNames) {
+        this.columnNames = columnNames;
         setStriped(true);
         setAutoResizeMode(AUTO_RESIZE_ALL_COLUMNS);
         settings = new LinkedList<Entry<String, String>>();
         CollectionUtils.addAll(settings, model.entrySet().toArray(new Entry[model.entrySet().size()]));
-        setModel(new TableModel());
+        setModel(new TableModel(columnNames));
         Enumeration<TableColumn> columns = getColumnModel().getColumns();
         while (columns.hasMoreElements()) {
             columns.nextElement().setCellRenderer(new FieldRenderer());
@@ -82,7 +84,7 @@ public class TemplatesTable extends JBTable {
                 return false;
             }
         }
-        TemplateConfigDialog dialog = new TemplateConfigDialog(settings.get(row));
+        TemplateConfigDialog dialog = new TemplateConfigDialog(columnNames,settings.get(row));
         dialog.show();
         if (dialog.isOK()) {
             settings.set(row, dialog.getModel());
@@ -97,10 +99,8 @@ public class TemplatesTable extends JBTable {
         /**
          * Instantiates a new Table model.
          */
-        public TableModel() {
-            columnNames = new LinkedList<String>();
-            columnNames.add("Regular expression");
-            columnNames.add("Preview");
+        public TableModel(List<String> columnNames) {
+            this.columnNames = columnNames;
         }
 
         @Override
@@ -110,7 +110,7 @@ public class TemplatesTable extends JBTable {
 
         @Override
         public void addRow() {
-            TemplateConfigDialog dialog = new TemplateConfigDialog();
+            TemplateConfigDialog dialog = new TemplateConfigDialog(columnNames,null);
             dialog.show();
             if (dialog.isOK()) {
                 settings.add(dialog.getModel());

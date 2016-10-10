@@ -1,8 +1,10 @@
 package com.github.setial.intellijjavadocs.transformation;
 
+
 import com.github.setial.intellijjavadocs.model.JavaDoc;
 import com.github.setial.intellijjavadocs.model.JavaDocElements;
 import com.github.setial.intellijjavadocs.model.JavaDocTag;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,20 +12,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
+
 
 /**
  * The type Java doc builder.
  *
  * @author Sergey Timofiychuk
  */
-public class JavaDocBuilder {
+public class JavaDocBuilder
+{
 
     private StringBuilder builder;
 
     /**
      * Instantiates a new Java doc builder.
      */
-    public JavaDocBuilder() {
+    public JavaDocBuilder()
+    {
         builder = new StringBuilder();
     }
 
@@ -32,7 +38,8 @@ public class JavaDocBuilder {
      *
      * @return the Java doc builder
      */
-    public JavaDocBuilder openJavaDoc() {
+    public JavaDocBuilder openJavaDoc()
+    {
         builder.append(JavaDocElements.STARTING.getPresentation());
         builder.append(JavaDocElements.LINE_START.getPresentation());
         return this;
@@ -43,9 +50,11 @@ public class JavaDocBuilder {
      *
      * @return the Java doc builder
      */
-    public JavaDocBuilder closeJavaDoc() {
+    public JavaDocBuilder closeJavaDoc()
+    {
         // add new line with asterisk if it's not new line
-        if (!closeRegularJavaDoc()) {
+        if (!closeRegularJavaDoc())
+        {
             closeOneLineJavaDoc();
         }
         builder.append(JavaDocElements.ENDING.getPresentation());
@@ -57,7 +66,8 @@ public class JavaDocBuilder {
      *
      * @return the Java doc builder
      */
-    public JavaDocBuilder addNewLine() {
+    public JavaDocBuilder addNewLine()
+    {
         builder.append(JavaDocElements.NEW_LINE.getPresentation());
         builder.append(JavaDocElements.LINE_START.getPresentation());
         return this;
@@ -69,13 +79,17 @@ public class JavaDocBuilder {
      * @param descriptions the Descriptions
      * @return the Java doc builder
      */
-    public JavaDocBuilder addDescription(List<String> descriptions) {
+    public JavaDocBuilder addDescription(List<String> descriptions)
+    {
         Iterator<String> iterator = descriptions.iterator();
-        while (iterator.hasNext()) {
+        while (iterator.hasNext())
+        {
             String description = iterator.next();
-            if (isAcceptedDescription(description, iterator.hasNext())) {
+            if (isAcceptedDescription(description, iterator.hasNext()))
+            {
                 builder.append(description);
-                if (StringUtils.contains(description, JavaDocElements.NEW_LINE.getPresentation())) {
+                if (StringUtils.contains(description, JavaDocElements.NEW_LINE.getPresentation()))
+                {
                     builder.append(JavaDocElements.LINE_START.getPresentation());
                 }
             }
@@ -89,11 +103,15 @@ public class JavaDocBuilder {
      * @param descriptions the Descriptions
      * @return the Java doc builder
      */
-    public JavaDocBuilder addTagDescription(List<String> descriptions) {
-        for (int i = 0; i < descriptions.size(); i++) {
+    public JavaDocBuilder addTagDescription(List<String> descriptions)
+    {
+        for (int i = 0; i < descriptions.size(); i++ )
+        {
             String description = descriptions.get(i);
-            if (StringUtils.isNotBlank(description)) {
-                if (i != 0) {
+            if (StringUtils.isNotBlank(description))
+            {
+                if (i != 0)
+                {
                     addNewLine();
                 }
                 builder.append(description);
@@ -106,22 +124,31 @@ public class JavaDocBuilder {
      * Add tag to javadoc section.
      *
      * @param name the Name
-     * @param tag  the Tag
+     * @param tag the Tag
      * @return the Java doc builder
      */
-    public JavaDocBuilder addTag(String name, JavaDocTag tag) {
+    public JavaDocBuilder addTag(String name, JavaDocTag tag)
+    {
         builder.append(JavaDocElements.WHITE_SPACE.getPresentation());
         builder.append(JavaDocElements.TAG_START.getPresentation());
         builder.append(name);
         builder.append(JavaDocElements.WHITE_SPACE.getPresentation());
 
-        if (StringUtils.isNotBlank(tag.getRefParam())) {
+        if (StringUtils.isNotBlank(tag.getRefParam()))
+        {
             builder.append(tag.getRefParam());
-        } else if (StringUtils.isNotBlank(tag.getValue())) {
+        }
+        else if (StringUtils.isNotBlank(tag.getValue()))
+        {
             builder.append(tag.getValue());
         }
 
-        builder.append(JavaDocElements.WHITE_SPACE.getPresentation());
+        String startsWithCharacterPattern = "[\\w.,'].*";
+        if (CollectionUtils.isNotEmpty(tag.getDescription())
+            && Pattern.matches(startsWithCharacterPattern, tag.getDescription().iterator().next()))
+        {
+            builder.append(JavaDocElements.WHITE_SPACE.getPresentation());
+        }
         addTagDescription(tag.getDescription());
         return this;
     }
@@ -132,20 +159,25 @@ public class JavaDocBuilder {
      * @param tags the Tags
      * @return the Java doc builder
      */
-    public JavaDocBuilder addTags(@NotNull Map<String, List<JavaDocTag>> tags) {
+    public JavaDocBuilder addTags(@NotNull Map<String, List<JavaDocTag>> tags)
+    {
         Iterator<Entry<String, List<JavaDocTag>>> iterator = tags.entrySet().iterator();
-        while (iterator.hasNext()) {
+        while (iterator.hasNext())
+        {
             Entry<String, List<JavaDocTag>> entry = iterator.next();
             String name = entry.getKey();
             Iterator<JavaDocTag> javaDocTagsIterator = entry.getValue().iterator();
-            while (javaDocTagsIterator.hasNext()) {
+            while (javaDocTagsIterator.hasNext())
+            {
                 JavaDocTag javaDocTag = javaDocTagsIterator.next();
                 addTag(name, javaDocTag);
-                if (javaDocTagsIterator.hasNext()) {
+                if (javaDocTagsIterator.hasNext())
+                {
                     addNewLine();
                 }
             }
-            if (iterator.hasNext()) {
+            if (iterator.hasNext())
+            {
                 addNewLine();
             }
         }
@@ -158,7 +190,8 @@ public class JavaDocBuilder {
      * @param javadoc the Javadoc
      * @return the Java doc builder
      */
-    public JavaDocBuilder createDefaultJavaDoc(@NotNull JavaDoc javadoc) {
+    public JavaDocBuilder createDefaultJavaDoc(@NotNull JavaDoc javadoc)
+    {
         openJavaDoc();
         addDescription(javadoc.getDescription());
         addTags(javadoc.getTags());
@@ -172,14 +205,18 @@ public class JavaDocBuilder {
      * @return the String
      */
     @NotNull
-    public String build() {
+    public String build()
+    {
         return builder.toString();
     }
 
-    private boolean closeRegularJavaDoc() {
+    private boolean closeRegularJavaDoc()
+    {
         boolean result = false;
-        if (builder.lastIndexOf(JavaDocElements.LINE_START.getPresentation()) != builder.length() - 1 &&
-                builder.lastIndexOf(JavaDocElements.NEW_LINE.getPresentation()) >= 0) {
+        if (builder.lastIndexOf(JavaDocElements.LINE_START.getPresentation()) != builder.length()
+                                                                                 - 1
+            && builder.lastIndexOf(JavaDocElements.NEW_LINE.getPresentation()) >= 0)
+        {
             builder.append(JavaDocElements.NEW_LINE.getPresentation());
             builder.append(JavaDocElements.WHITE_SPACE.getPresentation());
             builder.append(JavaDocElements.LINE_START.getPresentation());
@@ -188,20 +225,25 @@ public class JavaDocBuilder {
         return result;
     }
 
-    private boolean closeOneLineJavaDoc() {
+    private boolean closeOneLineJavaDoc()
+    {
         boolean result = false;
-        if (builder.indexOf(JavaDocElements.NEW_LINE.getPresentation()) < 0) {
+        if (builder.indexOf(JavaDocElements.NEW_LINE.getPresentation()) < 0)
+        {
             builder.append(JavaDocElements.LINE_START.getPresentation());
             result = true;
         }
         return result;
     }
 
-    private boolean isAcceptedDescription(String description, boolean hasNext) {
+    private boolean isAcceptedDescription(String description, boolean hasNext)
+    {
         boolean result = false;
-        // add any not empty string (it could be blank), but do not add last string if this is a space
-        if ((hasNext && StringUtils.isNotEmpty(description)) ||
-                (!hasNext && !description.matches(" +"))) {
+        // add any not empty string (it could be blank), but do not add last string if this is a
+        // space
+        if ((hasNext && StringUtils.isNotEmpty(description))
+            || (!hasNext && !description.matches(" +")))
+        {
             result = true;
         }
         return result;
